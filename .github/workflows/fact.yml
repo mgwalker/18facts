@@ -1,0 +1,37 @@
+on:
+  schedule:
+    # Run every day
+    - cron: "0 14,22 * * *"
+
+jobs:
+  scream:
+    name: do a fact
+    runs-on: ubuntu-latest
+
+    env:
+      MASTO_SERVER: ${{ secrets.MASTO_SERVER }}
+      MASTO_TOKEN: ${{ secrets.MASTO_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: cache key
+        id: shuffle
+        run: echo "key=$(date +'%Y')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: npm
+
+      # Only shuffle the screams once every year. This is meant to prevent any
+      # duplicates within a given year. Good job, me!
+      - name: get shuffled cache for the year
+        uses: actions/cache@v4
+        with:
+          key: steps.shuffle.outputs.key
+          path: shuffled.json
+
+      - name: do the fact
+        run: |
+          npm ci
+          npm run fact
